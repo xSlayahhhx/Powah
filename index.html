@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/> <!-- Key for mobile responsiveness -->
+  <title>Powah Preservation</title>
+  <style>
+    :root {
+      --bg-light: #f9f9f9;
+      --bg-dark: #121212;
+      --text-light: #2c3e50;
+      --text-dark: #ecf0f1;
+      --section-light: #ffffff;
+      --section-dark: #1e1e1e;
+      --primary-light: #3498db;
+      --primary-dark: #2980b9;
+      --complete-light: #2ecc71;
+      --complete-dark: #27ae60;
+    }
+
+    html {
+      font-size: 16px; /* Base for rem units, helps text scale better */
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-light);
+      transition: background-color 0.3s, color 0.3s;
+      line-height: 1.6; /* Improves overall readability */
+    }
+    body.dark {
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #f0e4d7;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      cursor: pointer;
+      transition: opacity 0.7s ease-out;
+    }
+    #splash-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .dumpling-container {
+      position: relative;
+      text-align: center;
+    }
+    #dumpling {
+      font-size: 150px;
+      margin-bottom: 20px;
+      animation: gentle-bob 2s ease-in-out infinite;
+      display: inline-block;
+    }
+    @keyframes gentle-bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .steam {
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      opacity: 0;
+    }
+    .steam.animate {
+      animation-name: steam-rise;
+      animation-timing-function: ease-out;
+      animation-fill-mode: forwards;
+    }
+    .steam1 { width: 30px; height: 30px; top: -20px; left: 50%; --steam-x-offset: -70%; }
+    .steam2 { width: 40px; height: 40px; top: -35px; left: 50%; --steam-x-offset: -30%; }
+    .steam3 { width: 35px; height: 35px; top: -25px; left: 50%; --steam-x-offset: 20%; }
+
+    .steam1.animate { animation-duration: 3.8s; animation-delay: 0s; }
+    .steam2.animate { animation-duration: 4.2s; animation-delay: 0.3s; }
+    .steam3.animate { animation-duration: 4.0s; animation-delay: 0.6s; }
+
+    @keyframes steam-rise {
+      0% { opacity: 0; transform: translateY(10px) scale(0.5) translateX(var(--steam-x-offset)); }
+      50% { opacity: 0.8; }
+      100% { opacity: 0; transform: translateY(-80px) scale(1.2) translateX(var(--steam-x-offset)); }
+    }
+    #splash-quote {
+      font-size: 1.5em;
+      color: #5c4033;
+      margin-top: 30px;
+      opacity: 0;
+      transition: opacity 1s ease-in 0.5s;
+      text-align: center;
+      padding: 0 20px;
+    }
+    #splash-quote.visible { opacity: 1; }
+
+    #main-app-content.hidden { display: none; }
+    .app-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px; /* Original body padding for content area */
+    }
+
+    h1 { text-align: center; font-size: 2rem; /* Example using rem */ }
+    .live-datetime-container {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: var(--section-light);
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: background 0.3s;
+    }
+    body.dark .live-datetime-container { background: var(--section-dark); }
+    .live-datetime-container #live-date { font-size: 1.2em; font-weight: bold; margin: 0 0 5px 0; color: var(--primary-light); }
+    body.dark .live-datetime-container #live-date { color: var(--primary-dark); }
+    .live-datetime-container #live-time { font-size: 1.5em; margin: 0; font-family: 'Courier New', Courier, monospace; }
+
+    .calendar, .section { background: var(--section-light); border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: background 0.3s; }
+    body.dark .calendar, body.dark .section { background: var(--section-dark); }
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .calendar-title { font-size: 1.2em; font-weight: bold; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .calendar-day { text-align: center; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 1rem; /* Base day number size */ }
+    .calendar-day:hover { background: #e0e0e0; }
+    body.dark .calendar-day:hover { background: #333; }
+    .selected { background: var(--primary-light); color: white; }
+    body.dark .selected { background: var(--primary-dark); }
+    .completed { background: var(--complete-light); color: white; }
+    body.dark .completed { background: var(--complete-dark); }
+    .section-title { border-bottom: 2px solid var(--primary-light); padding-bottom: 5px; margin-bottom: 10px; font-size: 1.25rem; /* Example using rem */ }
+    body.dark .section-title { border-bottom-color: var(--primary-dark); }
+    .checklist-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 1rem; /* Example */ }
+    .checklist-item input { margin-right: 10px; transform: scale(1.2); /* Slightly larger checkboxes */ }
+    button {
+      background: var(--primary-light);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      margin: 10px;
+      min-height: 44px; /* Recommended minimum touch height */
+      -webkit-tap-highlight-color: transparent; /* Removes tap highlight on iOS */
+    }
+    button:hover { background: var(--primary-dark); }
+    body.dark button { background: var(--primary-dark); }
+
+    button:active,
+    .calendar-day:active {
+      opacity: 0.7; /* Simple tap feedback */
+    }
+
+    .button-row { display: flex; justify-content: center; flex-wrap: wrap; }
+    #dark-toggle { display: block; margin: 10px auto; }
+    textarea { width: 100%; box-sizing: border-box; height: 100px; margin-top: 10px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; resize: vertical; background-color: var(--section-light); color: var(--text-light); transition: background 0.3s, color 0.3s; font-size: 1rem;}
+    body.dark textarea { background-color: var(--section-dark); color: var(--text-dark); border-color: #444; }
+    #breathing-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; color: white; }
+    body.dark #breathing-modal { color: var(--text-dark); }
+    #breathing-circle { width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--primary-light); display: flex; justify-content: center; align-items: center; }
+    body.dark #breathing-circle { border-color: var(--primary-dark); }
+    #breath-indicator { width: 100%; height: 100%; border-radius: 50%; background-color: rgba(52, 152, 219, 0.3); transform: scale(0.5); }
+    #completion-celebration { display: none; animation: celebration 2s ease-in-out; font-size: 3em; text-align: center; margin-top: 20px; }
+    @keyframes celebration { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+    body.dark #breath-progress { background-color: var(--primary-dark); }
+    #progress-container { width: 80%; max-width: 300px; height: 10px; background-color: rgba(255,255,255,0.2); border-radius: 5px; margin: 20px auto; }
+    #breath-progress { width: 0%; height: 100%; background-color: var(--primary-light); border-radius: 5px; transition: width 0.5s; }
+
+    /* Media Query for very small screens */
+    @media (max-width: 360px) {
+      h1 { font-size: 1.6rem; } /* Adjusted */
+      .section-title { font-size: 1.05rem; } /* Adjusted */
+      .live-datetime-container #live-date { font-size: 0.9em; } /* Adjusted */
+      .live-datetime-container #live-time { font-size: 1.2em; } /* Adjusted */
+
+      .calendar-grid#days-header div {
+        font-size: 0.7em; /* Made day names even smaller */
+      }
+      .calendar-day {
+        padding: 6px; /* Reduced padding for day cells */
+        font-size: 0.85em; /* Made day numbers smaller */
+      }
+      button {
+        font-size: 0.9em; /* Slightly smaller button text */
+        padding: 8px 15px; /* Adjust button padding */
+      }
+      .checklist-item { font-size: 0.9rem; }
+      textarea { font-size: 0.9rem; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="splash-screen">
+    <div class="dumpling-container">
+      <div id="dumpling">🥟</div>
+      <div class="steam steam1"></div>
+      <div class="steam steam2"></div>
+      <div class="steam steam3"></div>
+    </div>
+    <p id="splash-quote">You are never truly alone ❤️</p>
+  </div>
+
+  <div id="main-app-content" class="hidden">
+    <div class="app-wrapper">
+        <button id="dark-toggle">Toggle Dark Mode</button>
+        <h1>Powah Preservation ❤️</h1>
+        <div class="live-datetime-container">
+          <p id="live-date"></p>
+          <p id="live-time"></p>
+        </div>
+        <div class="calendar">
+          <div class="calendar-header">
+            <button id="prev-month">←</button>
+            <div class="calendar-title" id="month-year">May 2024</div>
+            <button id="next-month">→</button>
+          </div>
+          <div class="calendar-grid" id="days-header">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          </div>
+          <div class="calendar-grid" id="calendar-days"></div>
+        </div>
+        <div class="section">
+          <h2 class="section-title">Morning (Start Your Day Grounded)</h2>
+          <div class="checklist-item"><input type="checkbox"> 5-minute stretch or light movement</div>
+          <div class="checklist-item"><input type="checkbox"> Get natural light</div>
+          <div class="checklist-item"><input type="checkbox"> Drink water before caffeine</div>
+          <div class="checklist-item"><input type="checkbox"> Set an intention</div>
+        </div>
+        <div class="section">
+          <h2 class="section-title">During the Day</h2>
+          <div class="checklist-item"><input type="checkbox"> Box Breathing</div>
+          <div class="checklist-item"><input type="checkbox"> 5 to see - 4 touch - 3 hear - 2 smell - 1 taste</div>
+          <div class="checklist-item"><input type="checkbox"> Worry Dump</div>
+          <div class="checklist-item"><input type="checkbox"> 20+ minutes of movement</div>
+        </div>
+        <div class="section">
+          <h2 class="section-title">Evening</h2>
+          <div class="checklist-item"><input type="checkbox"> Turn off screens</div>
+          <div class="checklist-item"><input type="checkbox"> Do calming routine</div>
+          <div class="checklist-item"><input type="checkbox"> Box Breathing</div>
+          <div class="checklist-item"><input type="checkbox"> Write it down</div>
+          <div class="checklist-item"><input type="checkbox"> Focus on rest</div>
+        </div>
+        <div class="section">
+          <h2 class="section-title">Reflection</h2>
+          <div class="checklist-item"><input type="checkbox"> Emotional trigger?</div>
+          <div class="checklist-item"><input type="checkbox"> What helped?</div>
+          <div class="checklist-item"><input type="checkbox"> What do I need tomorrow?</div>
+        </div>
+        <div class="section">
+          <h2 class="section-title">Notes</h2>
+          <textarea id="notes-area" placeholder="Write your thoughts or feelings..."></textarea>
+        </div>
+        <div id="breathing-modal">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 id="breath-instruction" style="font-size: 2em;">Breathe In</h2>
+            <p id="breath-countdown" style="font-size: 1.5em;">4</p>
+            <div id="progress-container">
+              <div id="breath-progress"></div>
+            </div>
+            <p id="time-remaining" style="font-size: 1em;">1:00 remaining</p>
+          </div>
+          <div id="breathing-circle">
+            <div id="breath-indicator"></div>
+          </div>
+          <div id="completion-celebration">
+            <div>😊</div>
+            <div style="color: #ff6b6b; font-size: 2em;">❤️</div>
+            <p style="font-size: 0.5em;">Great job!</p>
+          </div>
+          <button id="close-breathing" style="margin-top: 30px; padding: 10px 20px;">Close</button> <!-- Removed redundant styles already in button rule -->
+        </div>
+        <div class="button-row">
+          <button id="submit-btn">Submit for Today</button>
+          <button id="reset-btn">Reset for Tomorrow</button>
+          <button id="breathing-btn">Breathing</button>
+          <button id="save-notes">Save Notes</button>
+        </div>
+    </div> <!-- end .app-wrapper -->
+  </div> <!-- end #main-app-content -->
+
+  <audio id="phase-chime" src="sounds/phase-chime.mp3" preload="auto"></audio>
+  <audio id="completion-chime" src="sounds/completion-chime.mp3" preload="auto"></audio>
+
+  <script>
+    // --- SPLASH SCREEN LOGIC ---
+    const splashScreen = document.getElementById('splash-screen');
+    const mainAppContent = document.getElementById('main-app-content');
+    const dumplingElement = document.getElementById('dumpling');
+    const steamElements = document.querySelectorAll('.steam');
+    const splashQuoteElement = document.getElementById('splash-quote');
+    let splashProceeded = false;
+
+    splashScreen.addEventListener('click', () => {
+      if (splashProceeded) return;
+      splashProceeded = true;
+      dumplingElement.style.animationPlayState = 'paused';
+      steamElements.forEach(steam => steam.classList.add('animate'));
+      splashQuoteElement.classList.add('visible');
+      setTimeout(() => { splashScreen.classList.add('hidden'); }, 5000);
+      setTimeout(() => {
+        splashScreen.style.display = 'none';
+        mainAppContent.classList.remove('hidden');
+        initializeMainApp();
+      }, 5700);
+    });
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+    function setDarkMode(enabled) {
+      document.body.classList.toggle('dark', enabled);
+      localStorage.setItem('darkMode', enabled ? 'on' : 'off');
+    }
+    if (localStorage.getItem('darkMode') === 'on') {
+      setDarkMode(true);
+    }
+    const phaseChime = document.getElementById('phase-chime');
+    const completionChime = document.getElementById('completion-chime');
+
+    // --- MAIN APPLICATION INITIALIZATION FUNCTION ---
+    function initializeMainApp() {
+        const liveDateElement = document.getElementById('live-date');
+        const liveTimeElement = document.getElementById('live-time');
+        let lastKnownDay = new Date().getDate();
+        function updateLiveClock() {
+          const now = new Date();
+          liveDateElement.textContent = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          liveTimeElement.textContent = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          if (now.getDate() !== lastKnownDay) {
+            lastKnownDay = now.getDate();
+            currentDate = new Date(); // currentDate needs to be accessible by renderCalendar
+            renderCalendar();
+          }
+        }
+        if (liveDateElement && liveTimeElement) {
+            updateLiveClock();
+            setInterval(updateLiveClock, 1000);
+        }
+
+        let currentDate = new Date();
+        const monthYear = document.getElementById('month-year');
+        const calendarDays = document.getElementById('calendar-days');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        let completedDays = JSON.parse(localStorage.getItem('completedDays')) || {};
+        let notesData = JSON.parse(localStorage.getItem('notesData')) || {};
+
+        function renderCalendar() {
+          const year = currentDate.getFullYear();
+          const month = currentDate.getMonth();
+          monthYear.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate);
+          calendarDays.innerHTML = '';
+          const firstDay = new Date(year, month, 1).getDay();
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+          for (let i = 0; i < firstDay; i++) {
+            const dayEl = document.createElement('div'); dayEl.classList.add('calendar-day'); dayEl.style.opacity = '0.5'; calendarDays.appendChild(dayEl);
+          }
+          const today = new Date();
+          for (let i = 1; i <= daysInMonth; i++) {
+            const dayEl = document.createElement('div'); dayEl.classList.add('calendar-day'); dayEl.textContent = i;
+            const dateKey = `${year}-${month}-${i}`;
+            if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear() && !document.querySelector('.calendar-day.selected')) {
+              dayEl.classList.add('selected'); loadNotes(dateKey);
+            }
+            if (completedDays[dateKey]) dayEl.classList.add('completed');
+            dayEl.addEventListener('click', () => {
+              document.querySelectorAll('.calendar-day.selected').forEach(d => d.classList.remove('selected'));
+              dayEl.classList.add('selected');
+              currentDate.setDate(i); currentDate.setMonth(month); currentDate.setFullYear(year);
+              loadNotes(dateKey);
+            });
+            calendarDays.appendChild(dayEl);
+          }
+        }
+        function loadNotes(key) { document.getElementById('notes-area').value = notesData[key] || ''; }
+
+        document.getElementById('save-notes').addEventListener('click', () => {
+          const selDay = document.querySelector('.calendar-day.selected'); if (!selDay || !selDay.textContent) { alert('Select a day!'); return; }
+          const day = parseInt(selDay.textContent, 10);
+          const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${day}`;
+          notesData[dateKey] = document.getElementById('notes-area').value;
+          localStorage.setItem('notesData', JSON.stringify(notesData)); alert('Notes saved!');
+        });
+        if (prevMonthBtn) prevMonthBtn.addEventListener('click', () => { currentDate.setDate(1); currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); });
+        if (nextMonthBtn) nextMonthBtn.addEventListener('click', () => { currentDate.setDate(1); currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); });
+
+        document.getElementById('submit-btn').addEventListener('click', () => {
+          const selDay = document.querySelector('.calendar-day.selected'); if (!selDay || !selDay.textContent) { alert('Select a day!'); return; }
+          const items = []; document.querySelectorAll('.checklist-item input:checked').forEach(item => items.push(item.parentElement.textContent.trim()));
+          const day = parseInt(selDay.textContent, 10);
+          alert(`Submitted for ${currentDate.getMonth() + 1}/${day}/${currentDate.getFullYear()}!\nCompleted:\n- ${items.join('\n- ')}`);
+          selDay.classList.add('completed');
+          const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${day}`;
+          completedDays[dateKey] = true; localStorage.setItem('completedDays', JSON.stringify(completedDays));
+        });
+        document.getElementById('reset-btn').addEventListener('click', () => {
+          document.querySelectorAll('.checklist-item input[type="checkbox"]').forEach(cb => cb.checked = false);
+          const selDay = document.querySelector('.calendar-day.selected');
+          if (selDay && selDay.textContent) {
+            selDay.classList.remove('completed');
+            const day = parseInt(selDay.textContent, 10);
+            const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${day}`;
+            delete completedDays[dateKey]; localStorage.setItem('completedDays', JSON.stringify(completedDays));
+          }
+          alert('Checklist reset!');
+        });
+
+        const breathingBtn = document.getElementById('breathing-btn');
+        const breathingModal = document.getElementById('breathing-modal');
+        const closeBreathing = document.getElementById('close-breathing'); // Ensure ID is correct
+        const breathInstruction = document.getElementById('breath-instruction');
+        const breathCountdown = document.getElementById('breath-countdown');
+        const breathIndicator = document.getElementById('breath-indicator');
+        const breathProgress = document.getElementById('breath-progress');
+        const timeRemaining = document.getElementById('time-remaining');
+        const completionCelebration = document.getElementById('completion-celebration');
+        let breathingInterval, breathPhaseCounter = 0, secondsLeftInBreathPhase = 4, totalSecondsElapsedBreath = 0;
+        const totalDurationExercise = 60;
+        const breathPhases = [ { name: "Breathe In", duration: 4 }, { name: "Hold", duration: 4 }, { name: "Breathe Out", duration: 4 }, { name: "Hold", duration: 4 } ];
+
+        function startBreathing() {
+          breathingModal.style.display = "flex"; completionCelebration.style.display = "none";
+          breathPhaseCounter = 0; secondsLeftInBreathPhase = breathPhases[breathPhaseCounter].duration; totalSecondsElapsedBreath = 0;
+          breathProgress.style.width = "0%";
+          breathIndicator.style.transition = 'none'; breathIndicator.style.transform = "scale(0.5)"; void breathIndicator.offsetHeight;
+          updateBreathingUI(); breathingInterval = setInterval(updateBreathingCycle, 1000);
+          // Ensure modal elements are made visible
+          ['breath-instruction', 'breath-countdown', 'breathing-circle', 'time-remaining', 'progress-container'].forEach(id => {
+              const el = document.getElementById(id);
+              if(el) el.style.display = 'block'; // or 'flex' for breathing-circle if it's a flex container
+          });
+          const breathingCircle = document.getElementById('breathing-circle');
+          if(breathingCircle) breathingCircle.style.display = 'flex';
+        }
+        function updateBreathingCycle() {
+          secondsLeftInBreathPhase--; totalSecondsElapsedBreath++;
+          breathCountdown.textContent = secondsLeftInBreathPhase;
+          breathProgress.style.width = `${(totalSecondsElapsedBreath / totalDurationExercise) * 100}%`;
+          const remSecs = totalDurationExercise - totalSecondsElapsedBreath;
+          timeRemaining.textContent = `${Math.floor(remSecs/60)}:${(remSecs%60).toString().padStart(2,'0')} remaining`;
+          if (secondsLeftInBreathPhase <= 0) {
+            breathPhaseCounter = (breathPhaseCounter + 1) % breathPhases.length;
+            secondsLeftInBreathPhase = breathPhases[breathPhaseCounter].duration; updateBreathingUI();
+          }
+          if (totalSecondsElapsedBreath >= totalDurationExercise) completeBreathingExercise();
+        }
+        function updateBreathingUI() {
+          breathInstruction.textContent = breathPhases[breathPhaseCounter].name;
+          breathCountdown.textContent = secondsLeftInBreathPhase;
+          const dur = breathPhases[breathPhaseCounter].duration;
+          if (phaseChime && phaseChime.readyState >= 2) { phaseChime.currentTime = 0; phaseChime.play().catch(e=>console.warn("Phase chime play failed:", e));}
+          if (breathPhaseCounter === 0) { breathIndicator.style.transition = `transform ${dur}s ease-out`; breathIndicator.style.transform = "scale(1)"; }
+          else if (breathPhaseCounter === 1) { breathIndicator.style.transition = 'transform 0.1s linear'; breathIndicator.style.transform = "scale(1)"; }
+          else if (breathPhaseCounter === 2) { breathIndicator.style.transition = `transform ${dur}s ease-in`; breathIndicator.style.transform = "scale(0.5)"; }
+          else if (breathPhaseCounter === 3) { breathIndicator.style.transition = 'transform 0.1s linear'; breathIndicator.style.transform = "scale(0.5)"; }
+        }
+        function completeBreathingExercise() {
+          clearInterval(breathingInterval);
+          if (completionChime && completionChime.readyState >= 2) { completionChime.currentTime = 0; completionChime.play().catch(e=>console.warn("Completion chime play failed:", e));}
+          ['breath-instruction', 'breath-countdown', 'breathing-circle', 'time-remaining', 'progress-container'].forEach(id => {
+              const el = document.getElementById(id);
+              if (el) el.style.display = 'none';
+          });
+          completionCelebration.style.display = "block";
+          setTimeout(() => { if (breathingModal.style.display === "flex") stopBreathing(); }, 3000);
+          document.querySelectorAll('.checklist-item input[type="checkbox"]').forEach(cb => { if (cb.parentElement.textContent.includes("Box Breathing")) cb.checked = true; });
+        }
+        function stopBreathing() {
+          clearInterval(breathingInterval); breathingModal.style.display = "none";
+          if (phaseChime) phaseChime.pause(); if (completionChime) completionChime.pause();
+        }
+        if(breathingBtn) breathingBtn.addEventListener('click', startBreathing);
+        if(closeBreathing) closeBreathing.addEventListener('click', stopBreathing); // Make sure ID matches
+
+        const darkToggleBtn = document.getElementById('dark-toggle');
+        if (darkToggleBtn) darkToggleBtn.addEventListener('click', () => setDarkMode(!document.body.classList.contains('dark')));
+        renderCalendar(); // Initial render of the calendar
+    }
+  </script>
+</body>
+</html>
